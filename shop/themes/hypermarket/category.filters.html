@@ -60,7 +60,7 @@
                     {$c = $wa->shop->currency(true)}
                     <h5 class="s-filter-header">
                         <span class="s-filter-name js-filter-toggle">[`Price`]</span>
-                        {if $fractional_config["stock_units_enabled"]}
+                        {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
                             {if !empty($formatted_filter_units)}
                                 {* count($filter_stock_units) > 1 *}
                                 {if count($formatted_filter_units) > 2}

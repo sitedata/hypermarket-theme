@@ -51,9 +51,13 @@
             console.log( that );
 
             function formatFractionalConfig(config) {
-                config.frac_enabled = (config.frac_enabled === "1");
-                config.stock_units_enabled = (config.stock_units_enabled === "1");
-                config.base_units_enabled = (config.base_units_enabled === "1");
+                if (config) {
+                    config.frac_enabled = (config.frac_enabled === "1");
+                    config.stock_units_enabled = (config.stock_units_enabled === "1");
+                    config.base_units_enabled = (config.base_units_enabled === "1");
+                } else {
+                    config = {};
+                }
 
                 return config;
             }
@@ -692,7 +696,7 @@
             if (that.$stock_base_ratio.length) {
                 if (stock_base_ratio) {
                     that.$stock_base_ratio
-                        .html(parseFloat(that.sku.stock_base_ratio))
+                        .html(formatNumber(that.sku.stock_base_ratio))
                         .show();
                 } else {
                     that.$stock_base_ratio
@@ -731,6 +735,34 @@
                 });
 
                 return services_price;
+            }
+
+            function formatNumber(number) {
+                var result = number;
+                if (typeof number !== "string") { return result; }
+
+                var parts = number.split(".");
+                if (parts.length === 2) {
+                    var tail = parts[1],
+                        result2 = [],
+                        result3 = [parts[0]];
+
+                    if (tail.length) {
+                        for (var i = 0; i < tail.length; i++) {
+                            var letter = tail[tail.length - (i+1)];
+                            if (letter !== "0" || result2.length) {
+                                result2.push(letter);
+                            }
+                        }
+                        if (result2.length) {
+                            result3.push(result2.reverse().join(""));
+                        }
+                    }
+
+                    result = result3.join(".");
+                }
+
+                return result;
             }
         };
 

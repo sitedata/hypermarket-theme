@@ -22,24 +22,34 @@
         </section>
     {else}
         {$_currency = $wa->shop->currency()}
-        {$_currency_data = $wa->shop->getCurrencyData($_currency)}
+        {* $_currency_data = $wa->shop->getCurrencyData($_currency) *}
 
         <form method="post" class="s-cart-form">
 
             {* CART ITEM *}
             <div class="s-cart-products cart">
                 {foreach $cart.items as $item}
-                    {* this code sets default values for empty SKU fields *}
-                    {$product = shopFrac::inheritSkuFieldsFromProduct($item.product)}
-                    {$active_sku = $product.skus[$item["sku_id"]]}
+                    {if class_exists('shopFrac')}
+                        {* this code sets default values for empty SKU fields *}
+                        {$product = shopFrac::inheritSkuFieldsFromProduct($item.product)}
+                        {$active_sku = $product.skus[$item["sku_id"]]}
+                    {else}
+                        {$product = $item.product}
+                        {$active_sku = [
+                            "count" => $product.count,
+                            "price" => $product.price,
+                            "compare_price" => $product.compare_price
+                        ]}
+                    {/if}
+
                     {$_show_fractional = !empty($formatted_units[$product["stock_unit_id"]]) && !empty($formatted_units[$product["base_unit_id"]]) && ($product["stock_unit_id"] !== $product["base_unit_id"]) && !empty($active_sku["stock_base_ratio"])}
 
                     {$_subtotal = $_subtotal + $item.full_price}
 
                     <div class="s-cart-product" data-id="{$item.id}"
                          data-price="{$item.price}"
-                         data-count-min="{$item.order_count_min}"
-                         data-count-step="{$item.order_count_step}"
+                         data-count-min="{$item.order_count_min|default:"1"}"
+                         data-count-step="{$item.order_count_step|default:"1"}"
                     >
                         <div class="s-layout fixed">
                             <div class="s-column s-image-column">
@@ -111,28 +121,28 @@
                                     <div class="s-section-body">
                                         <div class="s-button-wrapper">
                                             <button class="s-button s-minus-button transparent js-decrease" type="button">
-                                                <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_url}wa-apps/shop/themes/hypermarket/img/svg/sprite.svg?v={$wa->version()}#minus"></use></svg></i></span>
+                                                <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_real_active_theme_url}img/svg/sprite.svg?v={$wa->version()}#minus"></use></svg></i></span>
                                                 <span class="s-description js-min-description" style="display: none;"></span>
                                             </button>
                                         </div>
                                         <div class="s-field-wrapper">
                                             <input class="s-field js-quantity-field" name="quantity[{$item.id}]" value="{$item.quantity|default:1|floatval}">
-                                            {if $fractional_config["stock_units_enabled"]}
+                                            {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
                                                 {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
                                                 <span class="s-unit">{$_stock_unit["name_short"]}</span>
                                             {/if}
                                         </div>
                                         <div class="s-button-wrapper">
                                             <button class="s-button s-plus-button transparent js-increase" type="button">
-                                                <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_url}wa-apps/shop/themes/hypermarket/img/svg/sprite.svg?v={$wa->version()}#plus"></use></svg></i></span>
+                                                <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_real_active_theme_url}img/svg/sprite.svg?v={$wa->version()}#plus"></use></svg></i></span>
                                                 <span class="s-description js-max-description" style="display: none;"></span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {$_quantity_locales = [
-                                        "min" => _w("мин. %s"),
-                                        "max" => _w("макс. %s")
+                                        "min" => _w("min. %s"),
+                                        "max" => _w("max. %s")
                                     ]}
 
                                     <script>
@@ -153,14 +163,14 @@
                                     <div class="s-prices-section">
                                         {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
                                         {$_base_unit = $formatted_units[$product["base_unit_id"]]}
-                                        {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                                        {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
                                         {$_base_price = ($active_sku["price"]/$active_sku["stock_base_ratio"])}
-                                        {$_base_price = $wa->shop->formatPrice($_base_price, ["unit" => $_base_unit["name_short"], "currency" => $_currency])}
+                                        {$_base_price = shop_currency($_base_price, ["unit" => $_base_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
 
                                         <div class="s-ratio-wrapper">
                                             <span>{sprintf(_w("1 %s"), $_stock_unit["name_short"])}</span>
                                             <span>&nbsp;=&nbsp;</span>
-                                            <span class="js-stock-base-ratio">{floatval($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
+                                            <span class="js-stock-base-ratio">{shop_number_format($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
                                         </div>
 
                                         <div class="s-price-wrapper">
@@ -170,8 +180,8 @@
                                     </div>
                                 {elseif !empty($formatted_units) && $formatted_units[$product["stock_unit_id"]]}
                                     {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
-                                    {if $fractional_config["stock_units_enabled"]}
-                                        {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                                    {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
+                                        {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
                                         <div class="s-prices-section">
                                             <div class="s-price-wrapper">
                                                 <span class="s-price js-product-price">{$_stock_price}</span>

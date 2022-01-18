@@ -12,17 +12,42 @@
 
 {else}
     {$_locales = [
-        "to_compare" => _w("To comparison"),
-        "in_compare" => _w("In comparison list"),
+        "to_compare" => "[`To comparison`]",
+        "in_compare" => "[`In comparison list`]",
         "added" => _w("Added"),
         "buy" => "{if $wa->shop->cart->total() > 0}{_w("Add to cart")}{else}{_w("Buy now")}{/if}"
     ]}
 
-    {* this code sets default values for empty SKU fields *}
-    {$product = shopFrac::inheritSkuFieldsFromProduct($product)}
+    {if class_exists('shopFrac')}
+        {* this code sets default values for empty SKU fields *}
+        {$product = shopFrac::inheritSkuFieldsFromProduct($product)}
+    {/if}
     {$active_sku = $product.skus[$product["sku_id"]]}
     {$_currency = $wa->shop->currency()}
-    {$_currency_data = $wa->shop->getCurrencyData($_currency)}
+    {if method_exists($wa->shop, "getCurrencyData")}
+        {$_currency_data = $wa->shop->getCurrencyData($_currency)}
+    {else}
+        {if ($currency_info["sign_position"])}
+            {$_pattern_html = "<span class=\"price-wrapper\"><span class=\"price\">%s</span>`$currency_info["sign_delim"]`<span class=\"currency\">`$currency_info["sign_html"]`</span></span>"}
+            {$_pattern_text = "<span class=\"price-wrapper\"><span class=\"price\">%s</span>`$currency_info["sign_delim"]`<span class=\"currency\">`$currency_info["sign"]`</span></span>"}
+        {else}
+            {$_pattern_html = "<span class=\"price-wrapper\"><span class=\"currency\">`$currency_info["sign_html"]`</span>`$currency_info["sign_delim"]`<span class=\"price\">%s</span></span>"}
+            {$_pattern_text = "<span class=\"price-wrapper\"><span class=\"currency\">`$currency_info["sign"]`</span>`$currency_info["sign"]`<span class=\"price\">%s</span></span>"}
+        {/if}
+
+        {$_currency_data = [
+            'code'             => $currency_info['code'],
+            'fraction_divider' => ifset($currency_info, 'decimal_point', '.'),
+            'fraction_size'    => ifset($currency_info, 'precision', 2),
+            'group_divider'    => $currency_info["thousands_sep"],
+            'group_size'       => 3,
+
+            'pattern_html' => $_pattern_html,
+            'pattern_text' => $_pattern_text,
+            'pattern_unit' => "%s"
+        ]}
+    {/if}
+
     {$_show_fractional = !empty($formatted_units[$product["stock_unit_id"]]) && !empty($formatted_units[$product["base_unit_id"]]) && ($product["stock_unit_id"] !== $product["base_unit_id"]) && !empty($active_sku["stock_base_ratio"])}
 
     <div class="s-product-cart" id="js-product-cart">
@@ -32,10 +57,10 @@
                     {if !empty($_show_fractional)}
                         {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
                         {$_base_unit = $formatted_units[$product["base_unit_id"]]}
-                        {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
-                        {$_stock_compare_price = $wa->shop->formatPrice($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                        {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+                        {$_stock_compare_price = shop_currency($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
                         {$_base_price = ($active_sku["price"]/$active_sku["stock_base_ratio"])}
-                        {$_base_price = $wa->shop->formatPrice($_base_price, ["unit" => $_base_unit["name_short"], "currency" => $_currency])}
+                        {$_base_price = shop_currency($_base_price, ["unit" => $_base_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
 
                         <div class="s-price-wrapper">
                             <span class="s-price js-product-price">{$_stock_price}</span>
@@ -47,17 +72,17 @@
                         <div class="s-ratio-wrapper">
                             <span>{sprintf(_w("1 %s"), $_stock_unit["name_short"])}</span>
                             <span>&nbsp;=&nbsp;</span>
-                            <span class="js-stock-base-ratio">{floatval($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
+                            <span class="js-stock-base-ratio">{shop_number_format($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
                         </div>
-                    {elseif $fractional_config["stock_units_enabled"] && !empty($formatted_units) && !empty($formatted_units[$product["stock_unit_id"]])}
+                    {elseif !empty($fractional_config) && $fractional_config["stock_units_enabled"] && !empty($formatted_units) && !empty($formatted_units[$product["stock_unit_id"]])}
                         {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
-                        {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
-                        {$_stock_compare_price = $wa->shop->formatPrice($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                        {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+                        {$_stock_compare_price = shop_currency($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
                         <div class="s-price js-product-price">{$_stock_price}</div>
                         <div class="s-compare-price js-compare-price {if !($active_sku["compare_price"] > 0)}is-hidden{/if}">{$_stock_compare_price}</div>
                     {else}
-                        <div class="s-price js-product-price">{$wa->shop->formatPrice($active_sku["price"], ["currency" => $_currency])}</div>
-                        <div class="s-compare-price js-compare-price {if !($product.compare_price > 0)}is-hidden{/if}">{$wa->shop->formatPrice($active_sku["compare_price"], ["currency" => $_currency])}</div>
+                        <div class="s-price js-product-price">{shop_currency($active_sku["price"], ["in_currency" => $_currency, "format" => "price_wrapper"])}</div>
+                        <div class="s-compare-price js-compare-price {if !($product.compare_price > 0)}is-hidden{/if}">{shop_currency($active_sku["compare_price"], ["in_currency" => $_currency, "format" => "price_wrapper"])}</div>
                     {/if}
                 </div>
             </header>
@@ -204,7 +229,7 @@
                         {foreach $product.skus as $sku}
                             <div class="sku-{$sku.id}-stock" {if $sku.id != $product.sku_id}style="display:none"{/if} data-sku-count="{$sku.count}">
                                 {if $sku.available}
-                                    {if !$wa->shop->settings('ignore_stock_count') && ($sku.count == 0 || !empty($sku["order_count_min"]) && $sku.count > 0 && $sku["order_count_min"] > $sku.count)}
+                                    {if !$wa->shop->settings('ignore_stock_count') && $sku.count !== null && ($sku.count == 0 || !empty($sku["order_count_min"]) && $sku.count > 0 && $sku["order_count_min"] > $sku.count)}
                                         <div class="sku-no-stock">
                                             <strong class="stock-critical">[`Out of stock`]</strong>
                                         </div>
@@ -266,28 +291,28 @@
                             <div class="s-section-body">
                                 <div class="s-button-wrapper">
                                     <button class="s-button s-minus-button transparent js-decrease" type="button">
-                                        <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_url}wa-apps/shop/themes/hypermarket/img/svg/sprite.svg?v={$wa->version()}#minus"></use></svg></i></span>
+                                        <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_real_active_theme_url}img/svg/sprite.svg?v={$wa->version()}#minus"></use></svg></i></span>
                                         <span class="s-description js-min-description" style="display: none;"></span>
                                     </button>
                                 </div>
                                 <div class="s-field-wrapper">
                                     <input class="s-field js-quantity-field" name="quantity" value="{$active_sku["order_count_min"]|default:1|floatval|json_encode}">
-                                    {if $fractional_config["stock_units_enabled"]}
+                                    {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
                                         {$_stock_unit = $formatted_units[$product["stock_unit_id"]]}
                                         <span class="s-unit">{$_stock_unit["name_short"]}</span>
                                     {/if}
                                 </div>
                                 <div class="s-button-wrapper">
                                     <button class="s-button s-plus-button transparent js-increase" type="button">
-                                        <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_url}wa-apps/shop/themes/hypermarket/img/svg/sprite.svg?v={$wa->version()}#plus"></use></svg></i></span>
+                                        <span class="s-icon"><i class="svg-sprite-icon top size-14"><svg><use xlink:href="{$wa_real_active_theme_url}img/svg/sprite.svg?v={$wa->version()}#plus"></use></svg></i></span>
                                         <span class="s-description js-max-description" style="display: none;"></span>
                                     </button>
                                 </div>
                             </div>
 
                             {$_quantity_locales = [
-                                "min" => _w("мин. %s"),
-                                "max" => _w("макс. %s")
+                                "min" => _w("min. %s"),
+                                "max" => _w("max. %s")
                             ]}
 
                             <script>
@@ -344,7 +369,7 @@
                         stock_unit_id: {$product.stock_unit_id|json_encode},
                         base_unit_id: {$product.base_unit_id|json_encode}
                     },
-                    fractional_config: {$fractional_config|json_encode},
+                    fractional_config: {if !empty($fractional_config)}{$fractional_config|json_encode}{else}null{/if},
                     units: {if !empty($formatted_units)}{$formatted_units|json_encode}{else}[]{/if},
                     locales: {$_locales|json_encode}
                 });

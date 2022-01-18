@@ -36,11 +36,13 @@
                         </th>
 
                         {$_currency = $wa->shop->currency()}
-                        {$_currency_data = $wa->shop->getCurrencyData($_currency)}
+                        {* $_currency_data = $wa->shop->getCurrencyData($_currency) *}
 
                         {foreach $products as $_product}
-                            {* this code sets default values for empty SKU fields *}
-                            {$_product = shopFrac::inheritSkuFieldsFromProduct($_product)}
+                            {if class_exists('shopFrac')}
+                                {* this code sets default values for empty SKU fields *}
+                                {$_product = shopFrac::inheritSkuFieldsFromProduct($_product)}
+                            {/if}
                             {$_badge_html = $wa->shop->badgeHtml($_product.badge)}
                             {$_available = $wa->shop->settings('ignore_stock_count') || $_product.count === null || $_product.count > 0}
 
@@ -87,10 +89,16 @@
                                             {if !empty($_show_fractional)}
                                                 {$_stock_unit = $formatted_units[$_product["stock_unit_id"]]}
                                                 {$_base_unit = $formatted_units[$_product["base_unit_id"]]}
-                                                {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
-                                                {$_stock_compare_price = $wa->shop->formatPrice($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                                                {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+                                                {$_stock_compare_price = shop_currency($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+
+
+
+                                                {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+
+
                                                 {$_base_price = ($active_sku["price"]/$active_sku["stock_base_ratio"])}
-                                                {$_base_price = $wa->shop->formatPrice($_base_price, ["unit" => $_base_unit["name_short"], "currency" => $_currency])}
+                                                {$_base_price = shop_currency($_base_price, ["unit" => $_base_unit["name_short"], "currency" => $_currency, "format" => "price_wrapper"])}
 
                                                 <div class="s-price-wrapper">
                                                     <span class="s-price">{$_stock_price}</span>
@@ -110,17 +118,17 @@
                                                 <div class="s-ratio-wrapper">
                                                     <span>{sprintf(_w("1 %s"), $_stock_unit["name_short"])}</span>
                                                     <span>&nbsp;=&nbsp;</span>
-                                                    <span class="js-stock-base-ratio">{floatval($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
+                                                    <span class="js-stock-base-ratio">{shop_number_format($active_sku["stock_base_ratio"])}</span>&nbsp;<span>{$_base_unit["name_short"]}</span>
                                                 </div>
                                             {else}
-                                                {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["currency" => $_currency])}
-                                                {$_stock_compare_price = $wa->shop->formatPrice($active_sku["compare_price"], ["currency" => $_currency])}
+                                                {$_stock_price = shop_currency($active_sku["price"], ["currency" => $_currency, "format" => "price_wrapper"])}
+                                                {$_stock_compare_price = shop_currency($active_sku["compare_price"], ["currency" => $_currency, "format" => "price_wrapper"])}
 
                                                 {if !empty($formatted_units) && $formatted_units[$_product["stock_unit_id"]]}
                                                     {$_stock_unit = $formatted_units[$_product["stock_unit_id"]]}
-                                                    {if $fractional_config["stock_units_enabled"]}
-                                                        {$_stock_price = $wa->shop->formatPrice($active_sku["price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
-                                                        {$_stock_compare_price = $wa->shop->formatPrice($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "currency" => $_currency])}
+                                                    {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
+                                                        {$_stock_price = shop_currency($active_sku["price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
+                                                        {$_stock_compare_price = shop_currency($active_sku["compare_price"], ["unit" => $_stock_unit["name_short"], "in_currency" => $_currency, "format" => "price_wrapper"])}
                                                     {/if}
                                                 {/if}
 

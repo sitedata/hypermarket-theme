@@ -116,7 +116,7 @@
         </div>
     </div>
 
-    {if $fractional_config["stock_units_enabled"] && !empty($formatted_filter_units) && $_active_sort.id === "price"}
+    {if !empty($fractional_config) && $fractional_config["stock_units_enabled"] && !empty($formatted_filter_units) && $_active_sort.id === "price"}
         {$_product_price_unit = [
             "id" => "",
             "name" => _w("товар"),
