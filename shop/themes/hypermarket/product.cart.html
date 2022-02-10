@@ -211,16 +211,17 @@
                         </span>
 
                         {function name=in_stock n=0 low=5 critical=2}
+                            {$unit_name = ''}
+                            {if !empty($formatted_units[$product["stock_unit_id"]])}
+                                {$unit_name = $formatted_units[$product["stock_unit_id"]]["name_short"]}
+                            {/if}
+                            {$left_text = _w("%s left", "%s left", $n)}
+
                             {if $n > $low or $n === null}
                                 <strong class="stock-high"><i class="s-icon green"></i> [`In stock`]</strong>
                             {elseif $n > $critical}
-                                <strong class="stock-low"><i class="s-icon yellow"></i> {* _w("%.3f left", "%.3f left", $n) *}{_w("Only a few items left")}</strong>
+                                <strong class="stock-low"><i class="s-icon yellow"></i> {$left_text} {$unit_name}</strong>
                             {elseif $n > 0}
-                                {$unit_name = ''}
-                                {if !empty($formatted_units[$product["stock_unit_id"]])}
-                                    {$unit_name = $formatted_units[$product["stock_unit_id"]]["name_short"]}
-                                {/if}
-                                {$left_text = _w("%s left", "%s left", $n)}
                                 <strong class="stock-critical"><i class="s-icon red"></i> {$left_text} {$unit_name}</strong>
                             {else}
                                 <strong class="stock-none"><i class="s-icon gray"></i> {if $wa->shop->settings('ignore_stock_count')}[`Pre-order only`]{else}[`Out of stock`]{/if}</strong>
@@ -233,6 +234,7 @@
                                         <div class="sku-no-stock">
                                             <strong class="stock-critical">[`Out of stock`]</strong>
                                         </div>
+                                        {$_is_out_of_stock = true}
                                     {else}
                                         {if $sku.stock}
                                             {foreach $stocks as $stock_id => $stock}
@@ -287,7 +289,8 @@
                 <div class="s-layout inline">
                     <div class="s-column">
 
-                        <div class="s-quantity-section" id="js-quantity-section">
+                        {$_is_disabled = !$product_available || (count($product.skus) === 1 && !empty($_is_out_of_stock))}
+                        <div class="s-quantity-section" id="js-quantity-section" {if $_is_disabled}style="visibility: hidden;"{/if}>
                             <div class="s-section-body">
                                 <div class="s-button-wrapper">
                                     <button class="s-button s-minus-button transparent js-decrease" type="button">
@@ -334,7 +337,8 @@
 
                         <div class="s-actions-wrapper">
                             <div class="s-button-wrapper">
-                                <input class="s-submit-button js-submit-button" type="submit" value="[`Buy`]" {if !$product_available}disabled="disabled"{/if}>
+                                {$_is_disabled = !$product_available || (count($product.skus) === 1 && !empty($_is_out_of_stock))}
+                                <input class="s-submit-button js-submit-button" type="submit" value="[`Buy`]" {if $_is_disabled}disabled="disabled"{/if}>
                             </div>
 
                             {if !empty($_show_compare)}

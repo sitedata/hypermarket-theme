@@ -58,18 +58,18 @@
             <div class="s-filter-group {if !empty($_is_selected)}is-opened{/if}">
                 {if $fid == 'price'}
                     {$c = $wa->shop->currency(true)}
-                    <h5 class="s-filter-header">
+                    <h5 class="s-filter-header is-price">
                         <span class="s-filter-name js-filter-toggle">[`Price`]</span>
                         {if !empty($fractional_config) && $fractional_config["stock_units_enabled"]}
                             {if !empty($formatted_filter_units)}
                                 {* count($filter_stock_units) > 1 *}
                                 {if count($formatted_filter_units) > 2}
                                     <div class="s-units-section">
-                                        <span class="s-divider">[`за`]</span>
+                                        <span class="s-divider">[`per`]</span>
                                         <div class="dropdown" id="js-filter-units-dropdown">
-                                            <span class="dropdown-toggle">{$filter_unit.name_short|default:_w("товар")|escape}</span>
+                                            <span class="dropdown-toggle">{$filter_unit.name_short|default:_w("product")|escape}</span>
                                             <div class="dropdown-body center">
-                                                <div class="dropdown-item {if empty($filter_unit)}selected{/if}" data-id="">{_w("товар")|escape}</div>
+                                                <div class="dropdown-item {if empty($filter_unit)}selected{/if}" data-id="">{_w("product")|escape}</div>
                                                 {foreach $formatted_filter_units as $_unit}
                                                     {$_is_active = (!empty($filter_unit) && ($_unit.id === $filter_unit.id))}
                                                     <div class="dropdown-item {if $_is_active}selected{/if}" data-id="{$_unit.id|escape}" title="{$_unit.name|escape}">{$_unit.name_short|escape}</div>
@@ -96,8 +96,11 @@
                                     </div>
                                 {else}
                                     <div class="s-units-section">
-                                        <span class="s-divider">[`за`]</span>
+                                        <span class="s-divider">[`per`]</span>
                                         <div class="toggle small" id="js-filter-units-toggle">
+                                            {if (count($filter_stock_units) > 1)}
+                                                <span class="{if empty($filter_unit)}selected{/if}" data-id="">{_w("product")|escape}</span>
+                                            {/if}
                                             {foreach $formatted_filter_units as $_unit}
                                                 {$_is_active = (!empty($filter_unit) && ($_unit.id === $filter_unit.id))}
                                                 <span class="{if $_is_active}selected{/if}" data-id="{$_unit.id|escape}" title="{$_unit.name|escape}">{$_unit.name_short|escape}</span>
@@ -124,7 +127,7 @@
                                 {/if}
                             {elseif !empty($filter_unit)}
                                 <div class="s-units-section">
-                                    <span class="s-divider">[`за`]</span>
+                                    <span class="s-divider">[`per`]</span>
                                     {$filter_unit.name_short|escape}
                                 </div>
                             {/if}

@@ -119,8 +119,8 @@
     {if !empty($fractional_config) && $fractional_config["stock_units_enabled"] && !empty($formatted_filter_units) && $_active_sort.id === "price"}
         {$_product_price_unit = [
             "id" => "",
-            "name" => _w("товар"),
-            "name_short" => _w("товар")
+            "name" => _w("product"),
+            "name_short" => _w("product")
         ]}
 
         {$_active_sort_unit = reset($formatted_filter_units)}
@@ -166,13 +166,13 @@
         {/strip}
 
         <div class="s-sorting-list sort-filters" id="js-sorting-inits-dropdown">
-            <span class="s-label">[`за`]:</span>
+            <span class="s-label">[`per`]:</span>
             <div class="s-dropdown-wrapper">
                 <span class="s-sort-active">{$_active_sort_unit.name_short|escape}</span>
                 <ul>
                     {if !empty($filter_stock_units) && count($filter_stock_units) > 1}
                         <li class="{if $_active_sort_unit.id === ""}is-active{/if}">
-                            <a href="?{_filter_url filter_name="sort_unit" filter_value=""}">[`товар`]</a>
+                            <a href="?{_filter_url filter_name="sort_unit" filter_value=""}">[`product`]</a>
                         </li>
                     {/if}
                     {foreach $formatted_filter_units as $_unit}
